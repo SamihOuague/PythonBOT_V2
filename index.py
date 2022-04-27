@@ -15,3 +15,4 @@ from lib.CryptoBot_V2 import CryptoBotV2
 
 bot = CryptoBotV2()
 bot.run()
+print("STARTED")

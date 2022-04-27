@@ -9,8 +9,7 @@ class BinanceAPI:
         self.config = json.loads(open("./BinanceConfig.json", "r").read())
         self.url = "https://api.binance.com/api/v3"
         self.urlV1 = "https://api.binance.com/sapi/v1"
-        self.accounts = self.getAccounts()["balances"]
-        self.accountsMargin = self.getAccounts("margin")["userAssets"]
+
 
     def getCandles(self, symbol, period = "1m", start = ""):
         url = self.url + "/klines?symbol={}&interval={}".format(symbol, period)
@@ -18,12 +17,18 @@ class BinanceAPI:
             url = url + "&startTime={}".format(start)
         return requests.get(url).json()
 
-    def getAccounts(self, accountType = "spot"):
+    def getAccounts(self, accountType = "spot", symbols = "CHZUSDT"):
+        symbols = ""
         if (accountType == "spot"):
             url = self.url + "/account"
-        else:
+        elif (accountType == "margin"):
             url = self.urlV1 + "/margin/account"
-        sign = "timestamp=" + str(round(time() * 1000))
+        elif (accountType == "isolated"):
+            url = self.urlV1 + "/margin/isolated/account"
+        else:
+            return False
+        if accountType == "isolated":
+            sign = "timestamp=" + str(round((time() - 1) * 1000)) + "&symbols=" + symbols
         h = hmac.new(bytes(self.config["secret"], "utf-8"), bytes(sign, "utf-8"), hashlib.sha256).hexdigest()
         url = url + "?" + sign + "&signature=" + h
         return requests.get(url, headers={"X-MBX-APIKEY": self.config["key"]}).json()
@@ -43,7 +48,7 @@ class BinanceAPI:
 
     def createOrder(self, side, size, symbol = "CHZUSDT"):
         url = self.url + "/order?"
-        sign = "timestamp=" + str(round(time() * 1000)) + "&symbol=" + symbol + "&type=market&side=" + side
+        sign = "timestamp=" + str(round((time() - 1) * 1000)) + "&symbol=" + symbol + "&type=market&side=" + side
         if (side == "buy"):
             sign = sign + "&quoteOrderQty="+ str(round(size - 1))
         else:
@@ -54,7 +59,7 @@ class BinanceAPI:
 
     def createMarginOrder(self, side, size, symbol = "CHZUSDT"):
         url = self.urlV1 + "/margin/order?"
-        sign = "timestamp=" + str(round(time() * 1000)) + "&symbol=" + symbol + "&type=MARKET&side=" + side
+        sign = "timestamp=" + str(round((time() - 1) * 1000)) + "&symbol=" + symbol + "&type=MARKET&side=" + side
         if (side == "BUY"):
             sign = sign + "&quoteOrderQty="+ str(round(size - 1))
         else:

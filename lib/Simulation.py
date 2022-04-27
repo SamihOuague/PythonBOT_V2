@@ -4,8 +4,8 @@ from lib.Analysis import Analysis
 class SimulationV5:
     def __init__(self, dataset):
         self.dataset = [[float(x) for x in d] for d in dataset]
-        self.walletA = {"free": 500, "quote": 0}
-        self.walletB = {"free": 100, "quote": 0}
+        self.walletA = {"free": 5000, "quote": 0}
+        self.walletB = {"free": 0, "quote": 0}
         self.analysis = Analysis(self.dataset)
         self.buyPosition = False
         self.sellPosition = False
@@ -53,7 +53,7 @@ class SimulationV5:
         score = 0
         candle = self.dataset[-1]
         if (self.analysis.invertedHammer(candle) or self.analysis.hammer(candle)):
-            score += 2
+            score += 1
         if (self.analysis.mobileAverage(99) < candle[1]):
             score += 1
         if (self.analysis.mobileAverage(25) < self.analysis.mobileAverage(99)):
@@ -70,6 +70,8 @@ class SimulationV5:
         
         if (volumeScore >= 3):
             score += 2
+
+        
 
         if score >= 3:
             return True
@@ -130,8 +132,8 @@ class SimulationV5:
     def makeDecision(self, candle):
         self.updateDataset(candle)
         price = float(candle[1])
-        if self.priceActionBuy() and not self.buyPosition:
-            self.orderBuy(price)
+        #if self.priceActionBuy() and not self.buyPosition:
+        #    self.orderBuy(price)
         if self.priceActionSell() and not self.sellPosition:
             self.orderSell(price)
         self.takeProfitFunction(price)

@@ -19,7 +19,7 @@ class CryptoBotV2:
         self.takeProfitSell = 0
         self.stopLossBuy = 0
         self.takeProfitBuy = 0
-        self.log = []
+        self.logs = []
         self.lastScore = {"buy": 0, "sell": 0}
         sleep(1)
 
@@ -36,7 +36,7 @@ class CryptoBotV2:
         newBalanceA = float(self.api.getAccount("CHZ")["free"])
         self.takeProfitBuy = self.candles[-1][4] + (self.candles[-1][4] * 0.01)
         self.stopLossBuy = self.candles[-1][4] - (self.candles[-1][4] * 0.01)
-        self.log.append("{} \033[33m BUY => {} \033[39m".format(datetime.fromtimestamp(self.candles[-1][0]/1000), self.candles[-1][4]))
+        self.logs.append("{} \033[33m BUY => {} \033[39m".format(datetime.fromtimestamp(self.candles[-1][0]/1000), self.candles[-1][4]))
         self.walletA["quote"] = newBalanceA if self.sellPosition else newBalanceA - self.walletA["free"]
         self.walletB["free"] = newBalanceB
         self.buyPosition = True
@@ -50,7 +50,7 @@ class CryptoBotV2:
         newBalanceA = float(self.api.getAccount("CHZ")["free"])
         self.takeProfitSell = self.candles[-1][4] - (self.candles[-1][4] * 0.01)
         self.stopLossSell = self.candles[-1][4] + (self.candles[-1][4] * 0.01)
-        self.log.append("{} \033[33m SELL => {} \033[39m".format(datetime.fromtimestamp(self.candles[-1][0]/1000), self.candles[-1][4]))
+        self.logs.append("{} \033[33m SELL => {} \033[39m".format(datetime.fromtimestamp(self.candles[-1][0]/1000), self.candles[-1][4]))
         self.walletB["quote"] = newBalanceB if self.buyPosition else newBalanceB - self.walletB["free"]
         self.walletA["free"] = newBalanceA
         self.sellPosition = True
@@ -58,19 +58,19 @@ class CryptoBotV2:
 
     def takeProfitFunction(self, price):
         if self.buyPosition and price >= self.takeProfitBuy:
-            self.log.append("{} \033[32m WIN => {} \033[39m".format(datetime.fromtimestamp(self.candles[-1][0]/1000), price))
+            self.logs.append("{} \033[32m WIN => {} \033[39m".format(datetime.fromtimestamp(self.candles[-1][0]/1000), price))
             self.closePositionB()
             
         elif self.sellPosition and price <= self.takeProfitSell:
-            self.log.append("{} \033[32m WIN => {} \033[39m".format(datetime.fromtimestamp(self.candles[-1][0]/1000), price))
+            self.logs.append("{} \033[32m WIN => {} \033[39m".format(datetime.fromtimestamp(self.candles[-1][0]/1000), price))
             self.closePositionA()
 
     def stopLossFunction(self, price):
         if self.buyPosition and price <= self.stopLossBuy:
-            self.log.append("{} \033[31m LOSS => {} \033[39m".format(datetime.fromtimestamp(self.candles[-1][0]/1000), price))
+            self.logs.append("{} \033[31m LOSS => {} \033[39m".format(datetime.fromtimestamp(self.candles[-1][0]/1000), price))
             self.closePositionB()
         elif self.sellPosition and price >= self.stopLossSell:
-            self.log.append("{} \033[31m LOSS => {} \033[39m".format(datetime.fromtimestamp(self.candles[-1][0]/1000), price))
+            self.logs.append("{} \033[31m LOSS => {} \033[39m".format(datetime.fromtimestamp(self.candles[-1][0]/1000), price))
             self.closePositionA()
 
     def closePositionB(self):
@@ -127,7 +127,7 @@ class CryptoBotV2:
         score = 0
         candle = self.candles[-1]
         if (self.analysis.invertedHammer(candle) or self.analysis.hammer(candle)):
-            score += 2
+            score += 1
         if (self.analysis.mobileAverage(99) < candle[1]):
             score += 1
         if (self.analysis.mobileAverage(25) < self.analysis.mobileAverage(99)):
@@ -152,36 +152,20 @@ class CryptoBotV2:
         return False
 
     def run(self):
-        drawChart(self.candles)
-        print("FREE => {} USDT / {} CHZ".format(round(self.walletB["free"], 2), round(self.walletA["free"])))
-        print("QUOTE => {} USDT / {} CHZ".format(round(self.walletB["quote"], 2), round(self.walletA["quote"])))
         while True:
             try:
                 if (time() > (self.candles[-1][0]/1000) + 60):
                     self.updateCandles()
                 sleep(1)
-                system("clear")
-                drawChart(self.candles[-15:-1])
                 price = float(self.api.ticker("CHZUSDT")["price"])
-                print("{}".format(datetime.fromtimestamp(self.candles[-1][0]/1000)))
-                print("FREE => {} USDT / {} CHZ".format(round(self.walletB["free"], 2), round(self.walletA["free"])))
-                print("QUOTE => {} USDT / {} CHZ".format(round(self.walletB["quote"], 2), round(self.walletA["quote"])))
-                print("Score => BUY = {} / SELL = {}".format(self.lastScore["buy"], self.lastScore["sell"]))
-                print("PRICE => {}".format(price))
-                for l in self.log:
-                    print(l)
-                if self.priceActionBuy():
-                    self.orderBuy()
-                elif self.priceActionSell():
+                if self.priceActionSell() and not self.sellPosition:
                     self.orderSell()
                 if self.buyPosition or self.sellPosition:
                     self.takeProfitFunction(price)
                     self.stopLossFunction(price)
                     sleep(5)
-                else:
-                    sleep(10)
+                for l in self.logs():
+                    print(l)
             except:
-                print("Connexion lost..")
                 sleep(5)
                 continue
-
