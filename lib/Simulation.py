@@ -4,7 +4,7 @@ from lib.Analysis import Analysis
 class SimulationV5:
     def __init__(self, dataset):
         self.dataset = [[float(x) for x in d] for d in dataset]
-        self.walletA = {"free": 5000, "quote": 0}
+        self.walletA = {"free": 100, "quote": 0}
         self.walletB = {"free": 0, "quote": 0}
         self.analysis = Analysis(self.dataset)
         self.buyPosition = False

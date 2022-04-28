@@ -13,4 +13,4 @@ if (simulation.walletB["quote"] > 0):
     simulation.walletB["quote"] = 0
 print("TAUX DE REUSSITE {}%".format(int(round(simulation.win / (simulation.win + simulation.loss), 2) * 100)))
 print("NOMBRE DE TRADE = {}".format(simulation.win + simulation.loss))
-print(simulation.walletA, simulation.walletB)
+print(round(simulation.walletA["free"], 2), simulation.walletB)
