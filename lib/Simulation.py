@@ -26,54 +26,44 @@ class SimulationV5:
     def priceActionBuy(self):
         score = 0
         candle = self.dataset[-1]
-        if (self.analysis.invertedHammer(candle) or self.analysis.hammer(candle)) and self.analysis.trendRate(3) < -10:
-            score += 2
-        if (self.analysis.mobileAverage(99) > candle[1]):
-            score += 1
-        if (self.analysis.mobileAverage(25) < self.analysis.mobileAverage(99)):
-            score += 1
         lastVolume = candle
         volumeScore = 0
-        for i in range(2, 10):
+        for i in range(2, 5):
             c = self.dataset[0-i]
-            if (lastVolume[5] < c[5] and lastVolume[4] > c[4]):
+            if (lastVolume[5] < c[5] and lastVolume[4] < c[4]):
                 lastVolume = c
                 volumeScore += 1
             else:
                 break
-        
-        if (volumeScore >= 3):
-            score += 3
 
-        if score >= 4:
+        if volumeScore >= 3 and candle[4] > c:
             return True
         return False
 
     def priceActionSell(self):
-        score = 0
         candle = self.dataset[-1]
-        if (self.analysis.invertedHammer(candle) or self.analysis.hammer(candle)):
-            score += 1
-        if (self.analysis.mobileAverage(99) < candle[1]):
-            score += 1
-        if (self.analysis.mobileAverage(25) < self.analysis.mobileAverage(99)):
-            score += 1
         lastVolume = candle
         volumeScore = 0
-        for i in range(2, 10):
+        
+        for i in range(2, 5):
             c = self.dataset[0-i]
-            if (lastVolume[5] > c[5] and lastVolume[4] < c[4]):
+            if (lastVolume[5] > c[5] and c[1] > c[4] and c[4] > lastVolume[4]):
                 lastVolume = c
                 volumeScore += 1
             else:
                 break
+            
         
-        if (volumeScore >= 3):
-            score += 2
-
-        
-
-        if score >= 3:
+        ecart = round(self.analysis.mobileAverage(99) / self.analysis.mobileAverage(25) * 100, 4)
+        if ecart > 100:
+            ecart = round(100 - ecart, 2)
+            pass
+        elif ecart < 100:
+            ecart = round(100 - ecart, 2)
+            pass
+        else:
+            ecart = 0
+        if (volumeScore >= 2 and self.analysis.getRSI(7) > 20):
             return True
         return False
 
@@ -131,7 +121,7 @@ class SimulationV5:
 
     def makeDecision(self, candle):
         self.updateDataset(candle)
-        price = float(candle[1])
+        price = float(candle[4])
         #if self.priceActionBuy() and not self.buyPosition:
         #    self.orderBuy(price)
         if self.priceActionSell() and not self.sellPosition:

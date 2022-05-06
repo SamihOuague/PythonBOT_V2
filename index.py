@@ -1,5 +1,4 @@
 from lib.Binance.BinanceAPI import BinanceAPI
-from lib.Simulation import SimulationV5
 from lib.CryptoBot_V2 import CryptoBotV2
 
 #api = BinanceAPI()

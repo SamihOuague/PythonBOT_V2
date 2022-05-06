@@ -10,7 +10,6 @@ class BinanceAPI:
         self.url = "https://api.binance.com/api/v3"
         self.urlV1 = "https://api.binance.com/sapi/v1"
 
-
     def getCandles(self, symbol, period = "1m", start = ""):
         url = self.url + "/klines?symbol={}&interval={}".format(symbol, period)
         if start != "":
@@ -18,7 +17,6 @@ class BinanceAPI:
         return requests.get(url).json()
 
     def getAccounts(self, accountType = "spot", symbols = "CHZUSDT"):
-        symbols = ""
         if (accountType == "spot"):
             url = self.url + "/account"
         elif (accountType == "margin"):
@@ -29,14 +27,16 @@ class BinanceAPI:
             return False
         if accountType == "isolated":
             sign = "timestamp=" + str(round((time() - 1) * 1000)) + "&symbols=" + symbols
-        h = hmac.new(bytes(self.config["secret"], "utf-8"), bytes(sign, "utf-8"), hashlib.sha256).hexdigest()
+        else:
+            sign = "timestamp=" + str(round((time() - 1) * 1000))
+        h = self.genHmacKey(sign)
         url = url + "?" + sign + "&signature=" + h
         return requests.get(url, headers={"X-MBX-APIKEY": self.config["key"]}).json()
 
     def getAccount(self, symbol, accountType = "spot"):
         if (accountType == "spot"):
             accounts = self.getAccounts()["balances"]
-        else:
+        elif (accountType == "margin"):
             accounts = self.getAccounts("margin")["userAssets"]
         try:
             for account in accounts:
@@ -53,20 +53,23 @@ class BinanceAPI:
             sign = sign + "&quoteOrderQty="+ str(round(size - 1))
         else:
             sign = sign + "&quantity=" + str(round(size - 1))
-        h = hmac.new(bytes(self.config["secret"], "utf-8"), bytes(sign, "utf-8"), hashlib.sha256).hexdigest()
+        h = self.genHmacKey(sign)
         url = url+sign+"&signature="+h
         return requests.post(url, headers={"X-MBX-APIKEY": self.config["key"]}).json()
 
     def createMarginOrder(self, side, size, symbol = "CHZUSDT"):
         url = self.urlV1 + "/margin/order?"
-        sign = "timestamp=" + str(round((time() - 1) * 1000)) + "&symbol=" + symbol + "&type=MARKET&side=" + side
+        sign = "isIsolated=TRUE&timestamp=" + str(round((time() - 1) * 1000)) + "&symbol=" + symbol + "&type=MARKET&side=" + side
         if (side == "BUY"):
-            sign = sign + "&quoteOrderQty="+ str(round(size - 1))
+            sign = sign + "&quoteOrderQty="+ str(round(size))
         else:
-            sign = sign + "&quantity=" + str(round(size - 1))
-        h = hmac.new(bytes(self.config["secret"], "utf-8"), bytes(sign, "utf-8"), hashlib.sha256).hexdigest()
+            sign = sign + "&quantity=" + str(round(size))
+        h = self.genHmacKey(sign)
         url = url+sign+"&signature="+h
         return requests.post(url, headers={"X-MBX-APIKEY": self.config["key"]}).json()
+
+    def genHmacKey(self, sign):
+        return hmac.new(bytes(self.config["secret"], "utf-8"), bytes(sign, "utf-8"), hashlib.sha256).hexdigest()
 
     def ticker(self, symbol = "CHZUSDT"):
         return requests.get(self.url + "/ticker/price?symbol="+symbol).json()

@@ -1,5 +1,6 @@
 import json
 from lib.Prototype import Prototype
+import json
 
 def priceActionSell(candles, analysis):
     score = 0
@@ -36,6 +37,6 @@ proto = Prototype("CHZUSDT", dataset[0:100], False, priceActionSell, 0.01, 0.01)
 for i in range(100, len(dataset)):
     proto.run(dataset[i])
 
-print((proto.win + proto.loss))
-print("TAUX DE REUSSITE {}%".format(round((proto.win / (proto.win + proto.loss)) * 100)))
-print("{} CHZ, {} USDT".format(round(proto.baseAsset, 2), round(proto.quoteAsset, 2)))
+#print((proto.win + proto.loss))
+#print("TAUX DE REUSSITE {}%".format(round((proto.win / (proto.win + proto.loss)) * 100)))
+#print("{} CHZ, {} USDT".format(round(proto.baseAsset, 2), round(proto.quoteAsset, 2)))

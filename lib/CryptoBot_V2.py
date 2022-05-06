@@ -153,19 +153,21 @@ class CryptoBotV2:
 
     def run(self):
         while True:
-            try:
-                if (time() > (self.candles[-1][0]/1000) + 60):
-                    self.updateCandles()
-                sleep(1)
-                price = float(self.api.ticker("CHZUSDT")["price"])
-                if self.priceActionSell() and not self.sellPosition:
-                    self.orderSell()
-                if self.buyPosition or self.sellPosition:
-                    self.takeProfitFunction(price)
-                    self.stopLossFunction(price)
-                    sleep(5)
-                for l in self.logs():
-                    print(l)
-            except:
+            #try:
+            if (time() > (self.candles[-1][0]/1000) + 60):
+                self.updateCandles()
+            sleep(5)
+            price = float(self.api.ticker("CHZUSDT")["price"])
+            if self.priceActionSell() and not self.sellPosition:
+                self.orderSell()
+            if self.buyPosition or self.sellPosition:
+                self.takeProfitFunction(price)
+                self.stopLossFunction(price)
                 sleep(5)
-                continue
+            system("clear")
+            print(self.walletA, self.walletB)
+            print("price => ", price)
+            print(self.logs)
+            #except:
+            #    sleep(5)
+            #    continue
