@@ -61,9 +61,9 @@ class BinanceAPI:
         url = self.urlV1 + "/margin/order?"
         sign = "isIsolated=TRUE&timestamp=" + str(round((time() - 1) * 1000)) + "&symbol=" + symbol + "&type=MARKET&side=" + side
         if (side == "BUY"):
-            sign = sign + "&quoteOrderQty="+ str(round(size))
+            sign = sign + "&quoteOrderQty="+ str(size)
         else:
-            sign = sign + "&quantity=" + str(round(size))
+            sign = sign + "&quantity=" + str(size)
         h = self.genHmacKey(sign)
         url = url+sign+"&signature="+h
         return requests.post(url, headers={"X-MBX-APIKEY": self.config["key"]}).json()

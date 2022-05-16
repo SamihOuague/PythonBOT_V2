@@ -1,15 +1,13 @@
 from datetime import datetime
 from time import sleep, time
-from lib.Analysis import Analysis
 from lib.OrderManager import OrderManager
 from lib.Binance.BinanceAPI import BinanceAPI
 import requests
 
 class Prototype:
-    def __init__(self, symbol, priceActionBuy, priceActionSell, takeProfit = 0.01, stopLoss = 0.01):
+    def __init__(self, initialCandle, symbol, priceActionBuy=False, priceActionSell=False, takeProfit = 0.013, stopLoss = 0.013):
         self.api = BinanceAPI()
-        self.candles = [[float(x) for x in t] for t in self.api.getCandles(symbol, "1m", str(round(time() - (60 * 100)) * 1000))]
-        self.analysis = Analysis(self.candles)
+        self.candles = initialCandle
         self.priceActionBuy = priceActionBuy
         self.priceActionSell = priceActionSell
         self.manager = OrderManager(symbol)
@@ -19,6 +17,7 @@ class Prototype:
         self.stopLimit = 0
         self.sellPosition = False
         self.buyPosition = False
+        self.symbol = symbol
 
     def updateCandles(self, candle):
         try:
@@ -36,32 +35,31 @@ class Prototype:
         if self.sellPosition and self.limit >= price:
             self.sellPosition = False
             self.manager.orderBuy()
-            return requests.post("http://localhost:3001/log", json={"log": "WIN={}".format(price), "orderedAt": str(datetime.fromtimestamp(self.candles[-1][0]/1000))})
+            return 1
         elif self.buyPosition and self.limit <= price:
             self.buyPosition = False
+            self.manager.orderSell()
             return 2 
         return 0
 
     def stopLossFn(self, price):
         if self.sellPosition and self.stopLimit <= price:
-            self.manager.orderBuy()
             self.sellPosition = False
             self.manager.orderBuy()
-            return requests.post("http://localhost:3001/log", json={"log": "LOSS={}".format(price), "orderedAt": str(datetime.fromtimestamp(self.candles[-1][0]/1000))})
         elif self.buyPosition and self.stopLimit >= price:
             self.buyPosition = False
+            self.manager.orderSell()
             return 2 
         return 0
 
     def makeDecision(self, price):
         if not (self.buyPosition or self.sellPosition):
-            if (self.priceActionSell and self.priceActionSell(self.candles, self.analysis)):
+            if (self.priceActionSell and self.priceActionSell(self.candles)):
                 self.sellPosition = True
                 self.stopLimit = price + (price * self.stopLoss)
                 self.limit = price - (price * self.takeProfit)
-                self.manager.orderSell()
-                return requests.post("http://localhost:3001/log", json={"log": "SELL={}".format(price), "orderedAt": str(datetime.fromtimestamp(self.candles[-1][0]/1000))})
-            elif (self.priceActionBuy and self.priceActionBuy()):
+                return self.manager.orderSell()
+            elif (self.priceActionBuy and self.priceActionBuy(self.candles)):
                 self.buyPosition = True
                 self.stopLimit = price - (price * self.stopLoss)
                 self.limit = price + (price * self.takeProfit)
@@ -77,13 +75,11 @@ class Prototype:
         while True:
             try:
                 if ((self.candles[-1][0]/1000) + 60) < time():
-                    candle = self.api.getCandles("CHZUSDT", "1m", str(round(time() - 61) * 1000))
+                    candle = self.api.getCandles(self.symbol, "1m", str(round(time() - 61) * 1000))
                     if len(candle) > 0:
                         self.updateCandles(candle[0])
-                        print("\033[33m{} New Candle - {}".format(datetime.fromtimestamp(round(time())), self.candles[-1][1]))
-                price = float(self.candles[-1][1])
-                if self.sellPosition or self.buyPosition:
-                    price = float(self.api.ticker("CHZUSDT")["price"])
+                        print("\033[33m{} New Candle - {}".format(datetime.fromtimestamp(round(time())), self.candles[-1][4]))
+                price = float(self.candles[-1][4])
                 if self.makeDecision(price):
                     print("\033[32m{} New position".format(datetime.fromtimestamp(round(time()))))
             except:

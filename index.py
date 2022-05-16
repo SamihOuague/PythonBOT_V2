@@ -1,17 +1,24 @@
+from lib.Prototype import Prototype
 from lib.Binance.BinanceAPI import BinanceAPI
-from lib.CryptoBot_V2 import CryptoBotV2
+from time import time
+import numpy as np
+from random import randint
+api = BinanceAPI()
+dataset = [[float(x) for x in d] for d in api.getCandles("BNBUSDT", "1m",  str(round(time() - (60*100)) * 1000))]
 
-#api = BinanceAPI()
-#
-#candles = [[float(x) for x in c] for c in json.loads(open("dataset1M.json").read())]
-#simulation = SimulationV5(candles[0:6], 0, 100)
-#
-#for i in range(5, len(candles)):
-#    simulation.makeDecision(candles[i])
-#print("TAUX DE REUSSITE {}%".format(int(round(simulation.win / (simulation.win + simulation.loss), 2) * 100)))
-#print("NOMBRE DE TRADE = {}".format(simulation.win + simulation.loss))
-#print(round(simulation.walletA, 2), round(simulation.walletB, 2))
 
-bot = CryptoBotV2()
-bot.run()
-print("STARTED")
+def sell(candles):
+    ma100 = np.average([x[4] for x in candles])
+    ma50 = np.average([x[4] for x in candles[-50:-1]])
+    ecartMA100 = ((candles[-2][4] - ma100)/candles[-2][4])*100
+    ecartMA50 = ((candles[-2][4] - ma50)/candles[-2][4])*100
+    takePos = randint(0,1)
+    print(ecartMA50, ecartMA100, takePos)
+    if randint(0,1) and -4 < ecartMA50 < 0 and ecartMA100 < 0:
+        return True
+    else:
+        return False
+
+
+bnbBot = Prototype(dataset, "BNBUSDT", priceActionSell=sell)
+bnbBot.run()

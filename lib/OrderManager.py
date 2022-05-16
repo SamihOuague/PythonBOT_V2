@@ -1,4 +1,3 @@
-import math
 from lib.Binance.BinanceAPI import BinanceAPI
 class OrderManager:
     def __init__(self, symbol = "CHZUSDT"):
@@ -10,8 +9,12 @@ class OrderManager:
     def updateWallet(self):
         try:
             account = self.api.getAccounts("isolated", self.symbol)["assets"][0]
-            self.wallet["base"] = math.floor(float(account["baseAsset"]["free"]))
-            self.wallet["quote"] = math.floor(float(account["quoteAsset"]["free"]))
+            wB = account["baseAsset"]["free"].split(".")
+            wQ = account["quoteAsset"]["free"].split(".")
+            wB[1] = wB[1][:3]
+            wQ[1] = wQ[1][:2]
+            self.wallet["base"] = ".".join(wB)
+            self.wallet["quote"] = ".".join(wQ)
             return self.wallet
         except:
             return False

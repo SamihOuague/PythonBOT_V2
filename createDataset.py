@@ -6,7 +6,7 @@ import json
 api = BinanceAPI()
 dataset = []
 start = round(time() - (60 * 500)) * 1000
-nbIter = 100
+nbIter = 10
 
 for i in range(0, nbIter):
     try:
